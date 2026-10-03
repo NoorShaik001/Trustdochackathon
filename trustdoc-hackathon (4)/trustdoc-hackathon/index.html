@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TRUSTDOC — Intelligent Legal Document Analysis & Risk Detection</title>
+  <meta name="description" content="AI-Powered contract clause extraction, version diffing, risk indicators, plain-language explanations, live scenario simulator, and human-in-the-loop reviewer workflow.">
+  <link rel="stylesheet" href="css/styles.css">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+  <!-- Top Application Header -->
+  <header class="header">
+    <div class="logo-area">
+      <div class="logo-icon">
+        <i data-lucide="shield-check" style="color: white; width: 22px; height: 22px;"></i>
+      </div>
+      <div>
+        <div class="logo-title">TRUSTDOC</div>
+        <div style="font-size: 0.65rem; color: var(--text-muted);">Intelligent Legal Analysis Platform</div>
+      </div>
+      <span class="logo-badge">Hackathon Live Demo</span>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 1.5rem;">
+      <div style="display: flex; flex-direction: column; align-items: flex-end;">
+        <span style="font-size: 0.75rem; color: var(--text-muted);">Active Document Pair</span>
+        <select id="contractSelect" class="form-control" style="font-weight: 600; padding: 4px 10px;">
+          <option value="msa-2026">Master Services Agreement (India IT/SaaS MSA v1 vs v2)</option>
+          <option value="nda-2026">Non-Disclosure Agreement (India NDA Mutual vs Unilateral)</option>
+        </select>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 0.5rem; background: rgba(15,22,37,0.8); padding: 6px 14px; border-radius: 12px; border: 1px solid var(--border-color);">
+        <span style="font-size: 0.75rem; color: var(--text-muted);">Overall Risk:</span>
+        <span id="headerRiskBadge" class="risk-badge badge-critical">CRITICAL (88/100)</span>
+      </div>
+
+      <div class="top-actions">
+        <button class="btn btn-outline" id="btnPromptsTab">
+          <i data-lucide="terminal" style="width: 16px;"></i> AI Prompt Studio
+        </button>
+        <button class="btn btn-primary" id="btnExportReport">
+          <i data-lucide="file-down" style="width: 16px;"></i> Export Executive Report
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Application Body -->
+  <div class="app-container">
+
+    <!-- Left Sidebar: Live Scenario Simulator -->
+    <aside class="sidebar-scenario">
+      <div class="sidebar-title">
+        <i data-lucide="sliders" style="width: 18px; color: var(--secondary);"></i>
+        Live Scenario Simulator
+      </div>
+      <p style="font-size: 0.75rem; color: var(--text-muted); line-height: 1.4;">
+        Adjust business conditions live to observe real-time dynamic re-assessment of contract risk score & recommendations.
+      </p>
+
+      <div class="scenario-card">
+        <div class="form-group">
+          <label><i data-lucide="user-check" style="width: 14px;"></i> Reviewer Role Perspective</label>
+          <select id="simRole" class="form-control">
+            <option value="client" selected>Client / Buyer (Protection Mode)</option>
+            <option value="provider">Service Provider / Vendor</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label><i data-lucide="shield-alert" style="width: 14px;"></i> Risk Tolerance Threshold</label>
+          <select id="simTolerance" class="form-control">
+            <option value="strict" selected>Strict (Conservative / Low Risk)</option>
+            <option value="standard">Standard (Balanced)</option>
+            <option value="aggressive">Aggressive (High Risk Tolerance)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label><i data-lucide="indian-rupee" style="width: 14px;"></i> Total Contract Value</label>
+          <input type="range" id="simDealSlider" min="500000" max="100000000" step="5000000" value="10000000" style="width: 100%;">
+          <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--secondary); font-weight: 700;">
+            <span>₹5 Lakhs</span>
+            <span id="simDealValDisplay">₹1.0 Crore</span>
+            <span>₹10 Crores</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label><i data-lucide="globe" style="width: 14px;"></i> Preferred Jurisdiction</label>
+          <select id="simJurisdiction" class="form-control">
+            <option value="Mumbai" selected>Mumbai / Maharashtra (India)</option>
+            <option value="Delhi">Delhi NCR (India)</option>
+            <option value="Bengaluru">Bengaluru / Karnataka (India)</option>
+            <option value="GIFT City">GIFT City IFSC (Arbitration)</option>
+            <option value="Delaware">Delaware (US)</option>
+            <option value="Cayman Islands">Cayman Islands (Offshore)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Live Adaptation Impact Box -->
+      <div class="scenario-card" style="border-color: rgba(6, 182, 212, 0.4); background: rgba(6, 182, 212, 0.05);">
+        <div style="font-size: 0.8rem; font-weight: 700; color: var(--secondary); display: flex; align-items: center; gap: 0.4rem;">
+          <i data-lucide="zap" style="width: 16px;"></i> Live Adaptation Feed
+        </div>
+        <div id="simFeed" style="font-size: 0.75rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 0.5rem; max-height: 160px; overflow-y: auto;">
+          <!-- Dynamically populated by app.js -->
+        </div>
+      </div>
+    </aside>
+
+    <!-- Right Main Workspace Area -->
+    <main class="main-content">
+
+      <!-- Connected Workflow Stepper Header -->
+      <nav class="stepper-nav">
+        <div class="step-item active" data-step="1">
+          <div class="step-number">1</div>
+          <span class="step-label">Upload</span>
+        </div>
+        <i data-lucide="chevron-right" style="width: 14px; opacity: 0.3;"></i>
+
+        <div class="step-item" data-step="2">
+          <div class="step-number">2</div>
+          <span class="step-label">Clauses</span>
+        </div>
+        <i data-lucide="chevron-right" style="width: 14px; opacity: 0.3;"></i>
+
+        <div class="step-item" data-step="3">
+          <div class="step-number">3</div>
+          <span class="step-label">Version Diff</span>
+        </div>
+        <i data-lucide="chevron-right" style="width: 14px; opacity: 0.3;"></i>
+
+        <div class="step-item" data-step="4">
+          <div class="step-number">4</div>
+          <span class="step-label">Risk Matrix</span>
+        </div>
+        <i data-lucide="chevron-right" style="width: 14px; opacity: 0.3;"></i>
+
+        <div class="step-item" data-step="5">
+          <div class="step-number">5</div>
+          <span class="step-label">Explainable AI</span>
+        </div>
+        <i data-lucide="chevron-right" style="width: 14px; opacity: 0.3;"></i>
+
+        <div class="step-item" data-step="6">
+          <div class="step-number">6</div>
+          <span class="step-label">Reviewer Decisions</span>
+        </div>
+      </nav>
+
+      <!-- STEP 1: UPLOAD & INGEST -->
+      <section id="step1" class="step-section active-section">
+        <div class="glass-card">
+          <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+            <i data-lucide="file-up" style="color: var(--primary);"></i> Document Upload & Contract Ingestion
+          </h2>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+            Select a pre-loaded contract pair or drag & drop custom PDF / Word files to analyze.
+          </p>
+
+          <div style="border: 2px dashed var(--border-glow); border-radius: var(--radius-lg); padding: 2.5rem; text-align: center; background: rgba(99,102,241,0.02); cursor: pointer;" id="dropZone">
+            <i data-lucide="cloud-upload" style="width: 48px; height: 48px; color: var(--primary); margin-bottom: 1rem;"></i>
+            <div style="font-size: 1rem; font-weight: 700;">Drag & Drop Contract Documents</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem;">Supports PDF, DOCX, TXT (Auto-OCR & Text Extraction)</div>
+            <input type="file" id="fileInput" style="display: none;" accept=".pdf,.docx,.txt">
+            <button class="btn btn-outline" style="margin-top: 1rem;" onclick="document.getElementById('fileInput').click();">Browse Files</button>
+          </div>
+
+          <div style="margin-top: 2rem;">
+            <h3 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 1rem;">Active Contract Pair Preview</h3>
+            <div class="grid-2">
+              <div>
+                <div style="font-size: 0.85rem; font-weight: 600; color: var(--secondary); margin-bottom: 0.5rem;" id="v1Title">Version 1 (Baseline)</div>
+                <div id="v1PreviewText" class="contract-box">Loading V1...</div>
+              </div>
+              <div>
+                <div style="font-size: 0.85rem; font-weight: 600; color: var(--risk-high); margin-bottom: 0.5rem;" id="v2Title">Version 2 (Counterparty Redline)</div>
+                <div id="v2PreviewText" class="contract-box">Loading V2...</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; margin-top: 1.5rem;">
+            <button class="btn btn-primary" onclick="TRUSTDOC_APP.goToStep(2)">
+              Proceed to Clause Extraction <i data-lucide="arrow-right" style="width: 16px;"></i>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- STEP 2: CLAUSE EXTRACTION & CATEGORIZATION -->
+      <section id="step2" class="step-section">
+        <div class="glass-card">
+          <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+            <i data-lucide="layers" style="color: var(--primary);"></i> Extracted Contract Clauses & Categorization
+          </h2>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+            Clauses automatically classified into 8 legal categories with line ranges and key parameters.
+          </p>
+
+          <div id="clauseListContainer" style="display: flex; flex-direction: column; gap: 1rem;">
+            <!-- Dynamically populated -->
+          </div>
+
+          <div style="display: flex; justify-content: space-between; margin-top: 1.5rem;">
+            <button class="btn btn-outline" onclick="TRUSTDOC_APP.goToStep(1)"><i data-lucide="arrow-left"></i> Back</button>
+            <button class="btn btn-primary" onclick="TRUSTDOC_APP.goToStep(3)">View Version Diff & Redline <i data-lucide="arrow-right"></i></button>
+          </div>
+        </div>
+      </section>
+
+      <!-- STEP 3: VERSION DIFF & REDLINE -->
+      <section id="step3" class="step-section">
+        <div class="glass-card">
+          <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+            <i data-lucide="git-compare" style="color: var(--primary);"></i> Version Comparison & Smart Redlining
+          </h2>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+            Visual word-level diff annotations (Green additions, Red strikethrough deletions, Risk deltas).
+          </p>
+
+          <div id="diffContainer" style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <!-- Dynamically populated -->
+          </div>
+
+          <div style="display: flex; justify-content: space-between; margin-top: 1.5rem;">
+            <button class="btn btn-outline" onclick="TRUSTDOC_APP.goToStep(2)"><i data-lucide="arrow-left"></i> Back</button>
+            <button class="btn btn-primary" onclick="TRUSTDOC_APP.goToStep(4)">Evaluate Risk Matrix <i data-lucide="arrow-right"></i></button>
+          </div>
+        </div>
+      </section>
+
+      <!-- STEP 4: RISK ASSESSMENT MATRIX -->
+      <section id="step4" class="step-section">
+        <div class="glass-card">
+          <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+            <i data-lucide="shield-alert" style="color: var(--primary);"></i> Multi-Factor Risk Assessment Matrix
+          </h2>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+            Category risk breakdown and overall document risk score evaluation.
+          </p>
+
+          <div class="grid-2" style="margin-bottom: 1.5rem;">
+            <div class="glass-card" style="text-align: center; padding: 2rem;">
+              <div style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase;">Aggregate Risk Score</div>
+              <div id="riskScoreLarge" style="font-size: 4rem; font-weight: 800; color: var(--risk-critical); margin: 0.5rem 0;">88</div>
+              <div id="riskRatingLarge" class="risk-badge badge-critical" style="font-size: 1rem; padding: 6px 16px;">CRITICAL RISK</div>
+            </div>
+
+            <div class="glass-card">
+              <div style="font-size: 0.9rem; font-weight: 700; margin-bottom: 1rem;">Category Risk Breakdown</div>
+              <div id="categoryBars" style="display: flex; flex-direction: column; gap: 0.85rem;">
+                <!-- Category progress bars -->
+              </div>
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; margin-top: 1.5rem;">
+            <button class="btn btn-outline" onclick="TRUSTDOC_APP.goToStep(3)"><i data-lucide="arrow-left"></i> Back</button>
+            <button class="btn btn-primary" onclick="TRUSTDOC_APP.goToStep(5)">View Plain-Language Evidence <i data-lucide="arrow-right"></i></button>
+          </div>
+        </div>
+      </section>
+
+      <!-- STEP 5: EXPLAINABLE AI & EVIDENCE VIEW -->
+      <section id="step5" class="step-section">
+        <div class="glass-card">
+          <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+            <i data-lucide="sparkles" style="color: var(--primary);"></i> Explainable AI & Evidence-Backed Guidance
+          </h2>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+            Direct contract line citations translated into plain business language with counter-proposals.
+          </p>
+
+          <div id="evidenceContainer" style="display: flex; flex-direction: column; gap: 1rem;">
+            <!-- Dynamically populated -->
+          </div>
+
+          <div style="display: flex; justify-content: space-between; margin-top: 1.5rem;">
+            <button class="btn btn-outline" onclick="TRUSTDOC_APP.goToStep(4)"><i data-lucide="arrow-left"></i> Back</button>
+            <button class="btn btn-primary" onclick="TRUSTDOC_APP.goToStep(6)">Human Reviewer Actions <i data-lucide="arrow-right"></i></button>
+          </div>
+        </div>
+      </section>
+
+      <!-- STEP 6: HUMAN REVIEWER DECISIONS & AUDIT TRAIL -->
+      <section id="step6" class="step-section">
+        <div class="glass-card">
+          <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+            <i data-lucide="check-square" style="color: var(--primary);"></i> Human-in-the-Loop Reviewer Workflow
+          </h2>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+            Reviewer decision panel to accept, reject, edit, or override system risk ratings.
+          </p>
+
+          <div id="reviewerContainer" style="display: flex; flex-direction: column; gap: 1rem;">
+            <!-- Reviewer controls -->
+          </div>
+
+          <div class="glass-card" style="margin-top: 1.5rem; background: rgba(9, 13, 22, 0.8);">
+            <h3 style="font-size: 0.9rem; font-weight: 700; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.4rem;">
+              <i data-lucide="history" style="width: 16px;"></i> Human Reviewer Audit Log
+            </h3>
+            <div id="auditLog" style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 0.4rem; max-height: 150px; overflow-y: auto;">
+              <!-- Audit logs -->
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; margin-top: 1.5rem;">
+            <button class="btn btn-outline" onclick="TRUSTDOC_APP.goToStep(5)"><i data-lucide="arrow-left"></i> Back</button>
+            <button class="btn btn-primary" onclick="TRUSTDOC_APP.exportReport()"><i data-lucide="printer"></i> Export Final Legal Report</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- AI PROMPT STUDIO TAB (MODAL VIEW) -->
+      <section id="stepPrompts" class="step-section">
+        <div class="glass-card">
+          <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+            <i data-lucide="terminal" style="color: var(--secondary);"></i> TRUSTDOC AI Prompt Studio & LLM Guide
+          </h2>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+            Production system prompts used by TRUSTDOC for clause extraction, diffing, risk analysis, and explainability.
+          </p>
+
+          <div id="promptsListContainer" style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <!-- Dynamically populated from prompts.js -->
+          </div>
+
+          <div style="margin-top: 1.5rem;">
+            <button class="btn btn-outline" onclick="TRUSTDOC_APP.goToStep(1)"><i data-lucide="arrow-left"></i> Back to Main Workflow</button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Load JavaScript Modules -->
+  <script src="js/data/contracts.js"></script>
+  <script src="js/engine/prompts.js"></script>
+  <script src="js/engine/extractor.js"></script>
+  <script src="js/engine/diffEngine.js"></script>
+  <script src="js/engine/riskEngine.js"></script>
+  <script src="js/app.js"></script>
+
+  <script>
+    // Initialize Lucide Icons
+    lucide.createIcons();
+  </script>
+</body>
+</html>
